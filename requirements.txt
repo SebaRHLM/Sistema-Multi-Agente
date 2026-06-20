@@ -7,3 +7,6 @@ pydantic
 sentence-transformers
 chromadb
 PyMuPDF
+scikit-learn
+pandas
+xgboost
