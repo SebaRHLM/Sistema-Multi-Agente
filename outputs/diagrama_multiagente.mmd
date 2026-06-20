@@ -1,0 +1,29 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	preprocesar(preprocesar)
+	decidir_herramienta(decidir_herramienta)
+	calcular_map(calcular_map)
+	search_rag(search_rag)
+	analizar(analizar)
+	juez(juez)
+	respuesta_final(respuesta_final)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> preprocesar;
+	analizar --> juez;
+	calcular_map --> decidir_herramienta;
+	decidir_herramienta -.-> analizar;
+	decidir_herramienta -.-> calcular_map;
+	decidir_herramienta -.-> search_rag;
+	juez -. &nbsp;volver_investigador&nbsp; .-> decidir_herramienta;
+	juez -.-> respuesta_final;
+	preprocesar --> decidir_herramienta;
+	search_rag --> decidir_herramienta;
+	respuesta_final --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
