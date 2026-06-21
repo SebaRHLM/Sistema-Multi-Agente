@@ -10,6 +10,7 @@ from utils.nodes import (
     nodo_respuesta_final,
     nodo_tool_calcular_map,
     nodo_tool_search_rag,
+    nodo_tool_clasificar_paciente_
 )
 from utils.routers import router_herramientas, router_juez
 from utils.state import EstadoClinico
@@ -30,6 +31,7 @@ def construir_grafo():
     graph.add_node("decidir_herramienta", nodo_decidir_herramienta)
     graph.add_node("calcular_map", nodo_tool_calcular_map)
     graph.add_node("search_rag", nodo_tool_search_rag)
+    graph.add_node("clasificar_paciente_cardiovascular", nodo_tool_clasificar_paciente_,)
     graph.add_node("analizar", nodo_analizar)
     graph.add_node("juez", nodo_juez)
     graph.add_node("respuesta_final", nodo_respuesta_final)
@@ -45,6 +47,7 @@ def construir_grafo():
         {
             "calcular_map": "calcular_map",
             "search_rag": "search_rag",
+            "clasificar_paciente_cardiovascular": "clasificar_paciente_cardiovascular",
             "analizar": "analizar",
         },
     )
@@ -52,6 +55,7 @@ def construir_grafo():
     # Después de cada herramienta vuelve al investigador
     graph.add_edge("calcular_map", "decidir_herramienta")
     graph.add_edge("search_rag", "decidir_herramienta")
+    graph.add_edge("clasificar_paciente_cardiovascular", "decidir_herramienta")
 
     # Análisis y revisión
     graph.add_edge("analizar", "juez")
@@ -95,6 +99,7 @@ def estado_inicial_desde_caso(caso_clinico: str) -> EstadoClinico:
         "intentos_rag": 0,
         "iteraciones_herramientas": 0,
         "max_iteraciones_herramientas": 4,
+        "prediccion_cardiovascular_ml": {},
     }
 
 
@@ -116,12 +121,14 @@ def guardar_diagrama(app) -> None:
 
 
 def main():
+    print("Construyendo grafo ...") #prints de depuracion
     app = construir_grafo()
+    print("Grafo construido correctamente") #prints de depuracion
 
     caso = "Paciente de 70 años con presión arterial 85/55, mareos y antecedente de hipertensión."
     estado_inicial = estado_inicial_desde_caso(caso)
 
-    print("\nINICIANDO SISTEMA MULTIAGENTE CLÍNICO\n")
+    print("\nINICIANDO SISTEMA MULTIAGENTE CLÍNICO\n") #prints de depuracion
 
     ultimo_estado = None
     for step in app.stream(estado_inicial, stream_mode="values", config={"recursion_limit": 12}):

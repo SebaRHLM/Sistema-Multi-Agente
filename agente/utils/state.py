@@ -9,7 +9,8 @@ class EstadoClinico(TypedDict):
     # Preprocesamiento clínico
     datos_extraidos: Dict
     map_value: Optional[float]
-    interpretacion_map: str
+    interpretacion_map: str # tool de media de presion arterial
+    prediccion_cardiovascular_ml: dict # tool del clasificador
 
     # RAG
     query_rag: str

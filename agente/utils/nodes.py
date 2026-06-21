@@ -1,12 +1,13 @@
 import re
 from typing import Optional
+import json
 
 from langchain_core.prompts import ChatPromptTemplate
 
 from utils.llms import USE_REAL_LLM, llm_investigador, llm_juez
 from utils.schemas import DecisionHerramienta, RevisionJuez
 from utils.state import EstadoClinico
-from utils.tools.tools import calcular_MAP, search_clinical_evidence
+from utils.tools.tools import calcular_MAP, search_clinical_evidence, clasificar_paciente_cardiovascular
 
 
 # =========================================================
@@ -29,11 +30,11 @@ def _extraer_sintomas_basicos(texto: str) -> list[str]:
         "debilidad",
         "dolor torÃ¡cico",
         "disnea",
-        "sÃ­ncope",
+        "sincope",
         "cefalea",
-        "visiÃ³n borrosa",
+        "vision borrosa",
         "palpitaciones",
-        "sudoraciÃ³n",
+        "sudoracion",
     ]
     texto_lower = texto.lower()
     return [s for s in sintomas_posibles if s in texto_lower]
@@ -41,15 +42,30 @@ def _extraer_sintomas_basicos(texto: str) -> list[str]:
 
 def _extraer_antecedentes_basicos(texto: str) -> list[str]:
     antecedentes_posibles = [
-        "hipertensiÃ³n",
+        "hipertension",
         "diabetes",
-        "enfermedad renal crÃ³nica",
-        "insuficiencia cardÃ­aca",
+        "enfermedad renal cronica",
+        "insuficiencia cardiaca",
         "coronaria",
         "tabaquismo",
     ]
     texto_lower = texto.lower()
     return [a for a in antecedentes_posibles if a in texto_lower]
+
+def _extraer_edad(texto: str) -> Optional[int]:
+    match = re.search(r"(\d{1,3})\s*(años|year|years)", texto.lower())
+    if match:
+        return int(match.group(1))
+    return None
+
+
+def _extraer_sexo(texto: str) -> Optional[int]:
+    texto = texto.lower()
+    if any(x in texto for x in ["masculino", "hombre", "male"]):
+        return 1
+    if any(x in texto for x in ["femenino", "mujer", "female"]):
+        return 0
+    return None
 
 
 # =========================================================
@@ -58,7 +74,7 @@ def _extraer_antecedentes_basicos(texto: str) -> list[str]:
 
 
 def nodo_preprocesar_caso(state: EstadoClinico):
-    print("[Nodo] Preprocesar caso clÃ­nico")
+    print("[Nodo] Preprocesar caso clinico")
 
     caso = state["caso_clinico"]
     sistolica, diastolica = _extraer_presion(caso)
@@ -66,6 +82,9 @@ def nodo_preprocesar_caso(state: EstadoClinico):
     datos = {
         "sistolica": sistolica,
         "diastolica": diastolica,
+        "trestbps": sistolica,
+        "age": _extraer_edad(caso),
+        "sex": _extraer_sexo(caso),
         "sintomas": _extraer_sintomas_basicos(caso),
         "antecedentes": _extraer_antecedentes_basicos(caso),
     }
@@ -111,20 +130,29 @@ def _decision_mock_investigador(state: EstadoClinico):
             justificacion_herramienta="Se requiere evidencia clÃ­nica para fundamentar el anÃ¡lisis."
         )
 
-    # Si el juez detectÃ³ falta de evidencia y aÃºn queda intento RAG.
+    # Si el juez detecta falta de evidencia y aun queda intento RAG.
     if (
         state["revision"] == "falta_evidencia"
         and state["intentos_rag"] < 2
     ):
         return DecisionHerramienta(
             herramienta_siguiente="search_rag",
-            justificacion_herramienta="El juez indicÃ³ falta de evidencia; se debe realizar una nueva bÃºsqueda RAG."
+            justificacion_herramienta="El juez indica falta de evidencia; se debe realizar una nueva busqueda RAG."
         )
+    
+    if state["revision"] == "falta_datos":
+        return DecisionHerramienta(
+            herramienta_siguiente="analizar",
+            justificacion_herramienta=(
+                "El juez detectó falta de datos. No existe una herramienta capaz de inventarlos; "
+                "se generará salida con limitaciones y datos faltantes explícitos."
+            ),
+    )
 
     # En cualquier otro caso, analizar.
     return DecisionHerramienta(
         herramienta_siguiente="analizar",
-        justificacion_herramienta="El estado contiene datos suficientes para generar un anÃ¡lisis preliminar o una salida con limitaciones."
+        justificacion_herramienta="El estado contiene datos suficientes para generar un analisis preliminar o una salida con limitaciones."
     )
 
 
@@ -141,25 +169,25 @@ def nodo_decidir_herramienta(state: EstadoClinico):
                 (
                     "system",
                     """
-                    Eres un agente investigador clÃ­nico dentro de un sistema de apoyo mÃ©dico.
+                    Eres un agente investigador clinico dentro de un sistema de apoyo mÃ©dico.
                     Tu tarea es decidir cuÃ¡l es el siguiente recurso que debe usar el sistema.
 
                     Opciones disponibles:
-                    - calcular_map: usar si el caso contiene presiÃ³n sistÃ³lica y diastÃ³lica y todavÃ­a no se calculÃ³ MAP.
-                    - search_rag: usar si falta evidencia clÃ­nica para fundamentar el anÃ¡lisis.
+                    - calcular_map: usar si el caso contiene presiÃ³n sistÃ³lica y diastÃ³lica y todavia no se calculÃ³ MAP.
+                    - search_rag: usar si falta evidencia clinica para fundamentar el anÃ¡lisis.
                     - analizar: usar si ya hay datos y evidencia suficientes para elaborar un anÃ¡lisis preliminar.
 
                     Restricciones:
                     - Decide solo una acciÃ³n.
                     - No entregues diagnÃ³stico definitivo.
-                    - No recomiendes prescripciÃ³n farmacolÃ³gica automÃ¡tica.
+                    - No recomiendes prescripcion farmacolÃ³gica automÃ¡tica.
                     """,
                 ),
                 (
                     "user",
                     """
-                    Caso clÃ­nico: {caso_clinico}
-                    Datos extraÃ­dos: {datos_extraidos}
+                    Caso clinico: {caso_clinico}
+                    Datos extraidos: {datos_extraidos}
                     MAP actual: {map_value}
                     Evidencia RAG: {evidencia_rag}
                     Herramientas usadas: {herramientas_usadas}
@@ -235,12 +263,12 @@ def nodo_tool_search_rag(state: EstadoClinico):
 
     datos = state["datos_extraidos"]
     query = f"""
-    Trastornos de presiÃ³n arterial y enfermedades cardiovasculares asociadas.
-    PresiÃ³n arterial: {datos.get('sistolica')}/{datos.get('diastolica')}.
-    SÃ­ntomas: {datos.get('sintomas')}.
+    Trastornos de presion arterial y enfermedades cardiovasculares asociadas.
+    Presion arterial: {datos.get('sistolica')}/{datos.get('diastolica')}.
+    Sintomas: {datos.get('sintomas')}.
     Antecedentes: {datos.get('antecedentes')}.
-    Buscar evidencia sobre hipotensiÃ³n, hipertensiÃ³n, MAP, hipoperfusiÃ³n,
-    evaluaciÃ³n clÃ­nica y diagnÃ³sticos diferenciales.
+    Buscar evidencia sobre hipotension, hipertension, MAP,
+    evaluacion clinica y diagnosticos diferenciales.
     """.strip()
 
     try:
@@ -248,9 +276,8 @@ def nodo_tool_search_rag(state: EstadoClinico):
     except Exception as exc:
         evidencia = (
             "Evidencia RAG simulada por error o base no inicializada: "
-            "la hipotensiÃ³n puede ser clÃ­nicamente relevante si compromete perfusiÃ³n; "
-            "se deben evaluar signos, sÃ­ntomas, comorbilidades y causas cardiovasculares. "
-            f"Detalle tÃ©cnico: {exc}"
+            "se deben evaluar signos, sintomas, comorbilidades y causas cardiovasculares. "
+            f"Detalle tecnico: {exc}"
         )
 
     return {
@@ -261,27 +288,65 @@ def nodo_tool_search_rag(state: EstadoClinico):
         "iteraciones_herramientas": state["iteraciones_herramientas"] + 1,
     }
 
+# =========================================================
+# Nodo herramienta 3: clasificar paciente
+# =========================================================
+
+def nodo_tool_clasificar_paciente_ (state: EstadoClinico):
+    print("[Tool] clasificar_paciente_cardiovascular")
+
+    datos = state["datos_extraidos"]
+
+    resultado_str = clasificar_paciente_cardiovascular.invoke({
+        "age": datos.get("age"),
+        "sex": datos.get("sex"),
+        "cp": datos.get("cp"),
+        "trestbps": datos.get("trestbps"),
+        "chol": datos.get("chol"),
+        "fbs": datos.get("fbs"),
+        "restecg": datos.get("restecg"),
+        "thalach": datos.get("thalach"),
+        "exang": datos.get("exang"),
+        "oldpeak": datos.get("oldpeak"),
+        "slope": datos.get("slope"),
+        "ca": datos.get("ca"),
+        "thal": datos.get("thal"),
+    })
+
+    try:
+        resultado = json.loads(resultado_str)
+    except Exception:
+        resultado = {
+            "estado": "error_parseo",
+            "respuesta_cruda": resultado_str,
+        }
+
+    return {
+        "prediccion_cardiovascular_ml": resultado,
+        "herramientas_usadas": ["clasificar_paciente_cardiovascular"],
+        "iteraciones_herramientas": state["iteraciones_herramientas"] + 1,
+    }
 
 # =========================================================
-# Nodo LLM Investigador: anÃ¡lisis preliminar
+# Nodo LLM Investigador: analisis preliminar
 # =========================================================
 
 
 def nodo_analizar(state: EstadoClinico):
-    print("[LLM Investigador] Generando anÃ¡lisis preliminar")
+    print("[LLM Analizador] Generando análisis preliminar")
 
     if not USE_REAL_LLM:
         analisis = f"""
         El caso describe un paciente con datos compatibles con trastorno de presiÃ³n arterial.
-        Datos extraÃ­dos: {state['datos_extraidos']}.
+        Datos extraidos: {state['datos_extraidos']}.
         MAP calculado: {state['map_value']}.
-        InterpretaciÃ³n MAP: {state['interpretacion_map']}.
+        Interpretacion MAP: {state['interpretacion_map']}.
         Evidencia recuperada: {state['evidencia_rag']}.
 
-        AnÃ¡lisis preliminar:
-        - Considerar hipotensiÃ³n sintomÃ¡tica si la presiÃ³n baja se asocia a mareos, sÃ­ncope, debilidad o signos de hipoperfusiÃ³n.
-        - Evaluar contexto cardiovascular, comorbilidades, medicamentos y necesidad de exÃ¡menes complementarios.
-        - La respuesta debe ser interpretada por un profesional mÃ©dico y no corresponde a diagnÃ³stico definitivo.
+        Analisis preliminar:
+        - Considerar hipotension sintomatica si la presion baja se asocia a mareos, sincope, debilidad o signos de hipoperfusion.
+        - Evaluar contexto cardiovascular, comorbilidades y necesidad de examenes complementarios.
+        - La respuesta debe ser interpretada por un profesional medico y no corresponde a diagnastico definitivo.
         """.strip()
     else:
         prompt = ChatPromptTemplate.from_messages(
@@ -289,18 +354,19 @@ def nodo_analizar(state: EstadoClinico):
                 (
                     "system",
                     """
-                    Eres un agente investigador clÃ­nico. Genera un anÃ¡lisis preliminar Ãºtil para un mÃ©dico.
+                    Eres un agente investigador clinico. Genera un anÃ¡lisis preliminar util para un medico.
                     Usa solo los datos del caso y la evidencia entregada.
-                    No entregues diagnÃ³stico definitivo ni prescripciÃ³n automÃ¡tica.
+                    No entregues diagnostico definitivo ni prescripcion automatica.
                     """,
                 ),
                 (
                     "user",
                     """
-                    Caso clÃ­nico: {caso_clinico}
-                    Datos extraÃ­dos: {datos_extraidos}
+                    Caso clinico: {caso_clinico}
+                    Datos extraidos: {datos_extraidos}
                     MAP: {map_value}
-                    InterpretaciÃ³n MAP: {interpretacion_map}
+                    Interpretacion MAP: {interpretacion_map}
+                    Predicción cardiovascular ML: {prediccion_cardiovascular_ml}
                     Evidencia RAG: {evidencia_rag}
                     """,
                 ),
@@ -314,6 +380,7 @@ def nodo_analizar(state: EstadoClinico):
                 "map_value": state["map_value"],
                 "interpretacion_map": state["interpretacion_map"],
                 "evidencia_rag": state["evidencia_rag"],
+                "prediccion_cardiovascular_ml": state["prediccion_cardiovascular_ml"],
             }
         )
         analisis = respuesta.content
@@ -358,24 +425,24 @@ def nodo_juez(state: EstadoClinico):
                 (
                     "system",
                     """
-                    Eres un juez clÃ­nico de un sistema LLM + RAG.
-                    EvalÃºa si el anÃ¡lisis preliminar es suficiente, estÃ¡ fundamentado y respeta el alcance.
+                    Eres un juez clinico de un sistema Multiagente.
+                    Evalua si el analisis preliminar es suficiente, esta fundamentado y respeta el alcance.
 
                     Debes revisar:
-                    - datos clÃ­nicos mÃ­nimos;
+                    - datos clinicos minimos;
                     - evidencia RAG suficiente;
-                    - coherencia entre evidencia y anÃ¡lisis;
-                    - ausencia de diagnÃ³stico definitivo o prescripciÃ³n automÃ¡tica.
+                    - coherencia entre evidencia y analisis;
+                    - ausencia de diagnostico definitivo o prescripcion automatica.
                     """,
                 ),
                 (
                     "user",
                     """
-                    Caso clÃ­nico: {caso_clinico}
-                    Datos extraÃ­dos: {datos_extraidos}
+                    Caso clinico: {caso_clinico}
+                    Datos extraidos: {datos_extraidos}
                     MAP: {map_value}
                     Evidencia RAG: {evidencia_rag}
-                    AnÃ¡lisis preliminar: {analisis}
+                    Analisis preliminar: {analisis}
                     """,
                 ),
             ]
@@ -408,7 +475,7 @@ def nodo_juez(state: EstadoClinico):
 
 
 def nodo_respuesta_final(state: EstadoClinico):
-    print("[Nodo] Redactando respuesta final")
+    print("[Nodo-Respuesta Final] Redactando respuesta final") #prints de depuracion
 
     if state["revision"] != "aprobado":
         respuesta = f"""

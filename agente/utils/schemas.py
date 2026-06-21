@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 class DecisionHerramienta(BaseModel):
     """Salida estructurada del LLM investigador."""
 
-    herramienta_siguiente: Literal["calcular_map", "search_rag", "analizar"] = Field(
+    herramienta_siguiente: Literal["calcular_map", "search_rag", "clasificar_paciente_cardiovascular", "analizar"] = Field(
         description="Siguiente acción a ejecutar en el grafo."
     )
     justificacion_herramienta: str = Field(

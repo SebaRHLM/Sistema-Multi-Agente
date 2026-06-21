@@ -8,8 +8,10 @@ load_dotenv()
 USE_REAL_LLM = os.getenv("USE_REAL_LLM", "false").lower() == "true"
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
 
-llm_investigador = None
+llm_investigador = None 
 llm_juez = None
+llm_analizador = None
+llm_extractor = None 
 
 if USE_REAL_LLM:
     from langchain_openai import ChatOpenAI

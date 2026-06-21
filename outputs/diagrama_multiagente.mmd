@@ -9,6 +9,7 @@ graph TD;
 	decidir_herramienta(decidir_herramienta)
 	calcular_map(calcular_map)
 	search_rag(search_rag)
+	clasificar_paciente_cardiovascular(clasificar_paciente_cardiovascular)
 	analizar(analizar)
 	juez(juez)
 	respuesta_final(respuesta_final)
@@ -16,8 +17,10 @@ graph TD;
 	__start__ --> preprocesar;
 	analizar --> juez;
 	calcular_map --> decidir_herramienta;
+	clasificar_paciente_cardiovascular --> decidir_herramienta;
 	decidir_herramienta -.-> analizar;
 	decidir_herramienta -.-> calcular_map;
+	decidir_herramienta -.-> clasificar_paciente_cardiovascular;
 	decidir_herramienta -.-> search_rag;
 	juez -. &nbsp;volver_investigador&nbsp; .-> decidir_herramienta;
 	juez -.-> respuesta_final;

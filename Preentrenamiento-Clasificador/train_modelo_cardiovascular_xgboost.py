@@ -59,7 +59,7 @@ FEATURES = [
 CONTINUOUS_FEATURES = ["age", "trestbps", "chol", "thalach", "oldpeak"]
 CATEGORICAL_FEATURES = ["sex", "cp", "fbs", "restecg", "exang", "slope", "ca", "thal"]
 
-DEFAULT_MODEL_DIR = Path(__file__).resolve().parents / "modelo_ml"
+DEFAULT_MODEL_DIR = Path(__file__).resolve().parent / "modelo_ml"
 DEFAULT_MODEL_PATH = DEFAULT_MODEL_DIR / "xgboost_heart_pipeline.joblib"
 DEFAULT_METADATA_PATH = DEFAULT_MODEL_DIR / "xgboost_heart_metadata.json"
 

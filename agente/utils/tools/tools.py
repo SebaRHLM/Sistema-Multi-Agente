@@ -4,7 +4,7 @@ import pandas as pd
 import json
 
 from .search import search, format_search_results
-from clasificador_Util.clasificador_paciente_cardiovascular import FEATURES, _crear_dataframe_entrada, inicializar_modelo_cardiovascular
+from .clasificador_Util.clasificador_paciente_cardiovascular import FEATURES, _crear_dataframe_entrada, inicializar_modelo_cardiovascular
 
 
 @tool

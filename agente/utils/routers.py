@@ -4,7 +4,7 @@ from utils.state import EstadoClinico
 
 def router_herramientas(
     state: EstadoClinico,
-) -> Literal["calcular_map", "search_rag", "analizar"]:
+) -> Literal["calcular_map", "search_rag", "clasificar_paciente_cardiovascular", "analizar"]:
     """Router controlado por la decisión escrita por el LLM investigador."""
 
     decision = state["herramienta_siguiente"]
@@ -14,6 +14,19 @@ def router_herramientas(
 
     if decision == "search_rag":
         return "search_rag"
+    
+    if decision == "clasificar_paciente_cardiovascular":
+        return "clasificar_paciente_cardiovascular"
+    
+    # Condición de parada ante alucionaciones
+    if decision not in {
+        "calcular_map",
+        "search_rag",
+        "clasificar_paciente_cardiovascular",
+        "analizar",
+    }:
+        print(f"[Router Herramientas] Decisión inválida: {decision}. Se redirige a analizar.")
+        return "analizar"
 
     return "analizar"
 
