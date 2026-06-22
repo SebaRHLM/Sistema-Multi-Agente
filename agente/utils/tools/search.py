@@ -14,12 +14,14 @@ def inicializar_search_tool() -> None:
     """Inicializa una sola vez la colección y el modelo de embeddings."""
     global _collection, _embedder
 
-    if _collection is None:
-        _collection = preparar_dbv(reset=False)
-
     if _embedder is None:
         _embedder = SentenceTransformer(EMBED_MODEL)
 
+    if _collection is None:
+        _collection = preparar_dbv(
+            reset=False,
+            embedder=_embedder,
+        )
 
 def search(query: str, top_k: int = 5) -> list[dict[str, Any]]:
     """Busca evidencia clínica relevante en la base vectorial."""

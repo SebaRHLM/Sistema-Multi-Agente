@@ -46,25 +46,62 @@ class DatosExtraidos_LLM_Extractor(BaseModel):
         default=None,
         description="Edad del paciente en años."
     )
-    sex: Optional[int] = Field(
+    sex: Optional[float] = Field(
         default=None,
-        description="Sexo codificado para modelo ML: 1 masculino, 0 femenino. None si no se indica."
+        description="Sexo del paciente. 1=male/masculino, 0=female/femenino. None si no aparece.",
     )
 
     sintomas: List[str] = Field(default_factory=list)
     antecedentes: List[str] = Field(default_factory=list)
 
     # Variables opcionales del modelo cardiovascular
-    cp: Optional[float] = None
+    cp: Optional[float] = Field(
+        default=None,
+        description=(
+            "Tipo de dolor torácico. Valores permitidos: "
+            "0=typical angina, 1=atypical angina, "
+            "2=non-anginal, 3=asymptomatic. "
+            "Usar None si no se puede determinar."
+        ),
+    )
     chol: Optional[float] = None
-    fbs: Optional[float] = None
-    restecg: Optional[float] = None
+    fbs: Optional[float] = Field(
+        default=None,
+        description="Glucosa en ayunas >120 mg/dl. 1=True/Sí, 0=False/No. None si no aparece.",
+    )
+    restecg: Optional[float] = Field(
+        default=None,
+        description=(
+            "Resultado electrocardiográfico en reposo. Valores permitidos: "
+            "0=normal, 1=ST-T abnormality, 2=left ventricular hypertrophy. "
+            "Usar None si no aparece."
+        ),
+    )
     thalach: Optional[float] = None
     exang: Optional[float] = None
     oldpeak: Optional[float] = None
-    slope: Optional[float] = None
-    ca: Optional[float] = None
-    thal: Optional[float] = None
+    slope: Optional[float] = Field(
+        default=None,
+        description=(
+            "Pendiente del segmento ST en ejercicio. Valores permitidos: 0, 1, 2. "
+            "Usar None si no aparece."
+        ),
+    )
+    ca: Optional[float] = Field(
+        default=None,
+        description=(
+            "Número de vasos principales coloreados por fluoroscopía. "
+            "Valores permitidos: 0, 1, 2, 3. Usar None si no aparece."
+        ),
+    )
+    thal: Optional[float] = Field(
+        default=None,
+        description=(
+            "Variable thal codificada para el modelo cardiovascular. "
+            "Valores permitidos: 0=desconocido, 1=normal, 2=fixed defect, 3=reversible defect. "
+            "Usar None si no aparece."
+        ),
+    )
 
     # Campos clínicos generales
     comorbilidades: List[str] = Field(default_factory=list)

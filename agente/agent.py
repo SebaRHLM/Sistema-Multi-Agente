@@ -16,6 +16,7 @@ from utils.nodes import (
 from utils.routers import router_herramientas, router_juez, router_memoria_rag
 from utils.state import EstadoClinico
 from utils.casos__clinicos import casos_de_prueba
+from utils.tools.search import inicializar_search_tool
 
 
 
@@ -159,11 +160,29 @@ def seleccionar_caso_clinico() -> str:
 
         print("Opción inválida. Debes ingresar 1, 2 o 3.")
 
+def precargar_rag():
+    """
+    Carga el retriever RAG antes de iniciar el flujo del grafo.
+    Esto evita que la primera llamada a search_rag bloquee el nodo durante la demo.
+    """
+    print("[Startup] Inicializando RAG: ChromaDB + SentenceTransformer ...")
+
+    try:
+        inicializar_search_tool()
+        print("[Startup] RAG inicializado correctamente.")
+    except Exception as exc:
+        print(f"[Startup] No se pudo inicializar el RAG: {exc}")
+        print("[Startup] El sistema continuará, pero search_rag podría fallar o usar fallback.")
+
 
 def main():
     print("Construyendo grafo ...") #prints de depuracion
     app = construir_grafo()
     print("Grafo construido correctamente") #prints de depuracion
+
+    print("Cargando base vectorial y embedder para tool rag")
+    precargar_rag()
+    print("base vectorial y embedder cargados correctamente")
 
     caso = seleccionar_caso_clinico()
     estado_inicial = estado_inicial_desde_caso(caso)
@@ -171,7 +190,7 @@ def main():
     print("\nINICIANDO SISTEMA MULTIAGENTE CLÍNICO\n") #prints de depuracion
 
     ultimo_estado = None
-    for step in app.stream(estado_inicial, stream_mode="values", config={"recursion_limit": 12}):
+    for step in app.stream(estado_inicial, stream_mode="values", config={"recursion_limit": 20}):
         ultimo_estado = step
         print("\n----- ESTADO ACTUAL -----")
         print(step)

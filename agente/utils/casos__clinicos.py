@@ -1,5 +1,3 @@
-from typing import List
-
 # Yavuz, Y. E., & Kahraman, F. (2024). Evaluation of the prediagnosis and management of ChatGPT-4.0 in clinical cases in cardiology. Future cardiology, 20(4), 197–207. https://doi.org/10.1080/14796678.2024.2348898
 # Modificado
 CC_prueba_1_adaptado = """

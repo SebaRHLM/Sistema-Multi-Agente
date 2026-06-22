@@ -97,11 +97,15 @@ def llenar_base_vectorial(
     return len(documents)
 
 
-def preparar_dbv(reset: bool = False) -> Collection:
+def preparar_dbv(
+    reset: bool = False,
+    embedder: SentenceTransformer | None = None,
+) -> Collection:
     """
-    Prepara la base vectorial y retorna la coleccion lista para busqueda.
+    Prepara la base vectorial y retorna la colección lista para búsqueda.
 
-    Si la coleccion ya contiene documentos y reset=False, solo la reutiliza.
+    Si la colección ya contiene documentos y reset=False, solo la reutiliza.
+    Si debe llenar la base, reutiliza el embedder recibido para evitar doble carga.
     """
     _, collection = crear_base_vectorial(reset=reset)
 
@@ -110,7 +114,10 @@ def preparar_dbv(reset: bool = False) -> Collection:
 
     docs = cargar_documentos_pdf()
     chunks = build_chunks(docs)
-    embedder = SentenceTransformer(EMBED_MODEL)
+
+    if embedder is None:
+        embedder = SentenceTransformer(EMBED_MODEL)
+
     llenar_base_vectorial(collection, chunks, embedder)
 
     return collection

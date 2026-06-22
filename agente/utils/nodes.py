@@ -379,10 +379,37 @@ def nodo_extractor(state: EstadoClinico):
                     - examenes debe contener hallazgos de ECG, ecocardiograma, laboratorio, imágenes o examen físico relevante.
                     - datos_faltantes debe listar datos clínicos importantes que no aparecen y que serían útiles para evaluar el caso.
 
-                    Variables del modelo ML cardiovascular:
-                    - cp, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca y thal solo deben llenarse si aparecen explícitamente o si el caso entrega una equivalencia clara.
-                    - No inventes valores para completar el modelo ML.
-                    """,
+                    Variables del modelo cardiovascular:
+                    - age: edad del paciente en años.
+                    - sex: 1=male/masculino, 0=female/femenino.
+                    - cp: tipo de dolor torácico:
+                    0=typical angina,
+                    1=atypical angina,
+                    2=non-anginal,
+                    3=asymptomatic.
+
+                    - trestbps: presión arterial sistólica en reposo o al ingreso hospitalario.
+                    - chol: colesterol sérico en mg/dl.
+                    - fbs: 1 si fasting blood sugar >120 mg/dl, 0 si no.
+                    - restecg:
+                    0=normal,
+                    1=ST-T abnormality,
+                    2=left ventricular hypertrophy.
+
+                    - thalach: frecuencia cardíaca máxima alcanzada.
+                    - exang: angina inducida por ejercicio, 1=True, 0=False.
+                    - oldpeak: depresión ST inducida por ejercicio relativa al reposo.
+                    - slope: pendiente del segmento ST en ejercicio, valores permitidos 0, 1, 2.
+                    - ca: número de vasos principales coloreados por fluoroscopía, valores permitidos 0, 1, 2, 3.
+                    - thal:
+                    1=normal,
+                    2=fixed defect,
+                    3=reversible defect.
+
+                    Reglas:
+                    - No inventes variables del modelo.
+                    - Si una variable no aparece explícitamente o no puede inferirse de forma segura, usa null.
+                """,
             ),
             (
                 "user",

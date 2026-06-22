@@ -73,19 +73,29 @@ def clasificar_paciente_cardiovascular(
     https://www.kaggle.com/datasets/yasserh/heart-disease-dataset/data
 
     Parámetros esperados según el dataset:
-    - age: edad del paciente.
-    - sex: sexo codificado. Usualmente 1 = masculino, 0 = femenino.
-    - cp: tipo de dolor torácico codificado.
-    - trestbps: presión arterial en reposo.
-    - chol: colesterol sérico.
-    - fbs: glucosa en ayunas > 120 mg/dl. Usualmente 1 = sí, 0 = no.
-    - restecg: resultado electrocardiográfico en reposo codificado.
+     - age: edad del paciente en años.
+    - sex: 1=masculino, 0=femenino.
+    - cp: tipo de dolor torácico:
+        0=typical angina,
+        1=atypical angina,
+        2=non-anginal,
+        3=asymptomatic.
+    - trestbps: presión arterial en reposo o al ingreso hospitalario.
+    - chol: colesterol sérico en mg/dl.
+    - fbs: 1 si fasting blood sugar >120 mg/dl, 0 si no.
+    - restecg:
+        0=normal,
+        1=ST-T abnormality,
+        2=left ventricular hypertrophy.
     - thalach: frecuencia cardíaca máxima alcanzada.
-    - exang: angina inducida por ejercicio. Usualmente 1 = sí, 0 = no.
-    - oldpeak: depresión ST inducida por ejercicio respecto al reposo.
-    - slope: pendiente del segmento ST en ejercicio.
-    - ca: número de vasos principales observados por fluoroscopía.
-    - thal: talasemia codificada.
+    - exang: angina inducida por ejercicio, 1=True, 0=False.
+    - oldpeak: depresión ST inducida por ejercicio relativa al reposo.
+    - slope: pendiente del segmento ST en ejercicio, valores 0, 1, 2.
+    - ca: número de vasos principales coloreados por fluoroscopía, valores 0, 1, 2, 3.
+    - thal:
+        1=normal,
+        2=fixed defect,
+        3=reversible defect.
 
     Retorna:
     String JSON con predicción, probabilidad, variables faltantes y advertencias.
