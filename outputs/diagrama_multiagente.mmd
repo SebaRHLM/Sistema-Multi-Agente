@@ -5,27 +5,30 @@ config:
 ---
 graph TD;
 	__start__([<p>__start__</p>]):::first
-	preprocesar(preprocesar)
-	decidir_herramienta(decidir_herramienta)
+	extractor_LLM(extractor_LLM)
+	gestor_clinico(gestor_clinico)
 	calcular_map(calcular_map)
 	search_rag(search_rag)
+	resumir_evidencia_rag(resumir_evidencia_rag)
 	clasificar_paciente_cardiovascular(clasificar_paciente_cardiovascular)
 	analizar(analizar)
 	juez(juez)
 	respuesta_final(respuesta_final)
 	__end__([<p>__end__</p>]):::last
-	__start__ --> preprocesar;
+	__start__ --> extractor_LLM;
 	analizar --> juez;
-	calcular_map --> decidir_herramienta;
-	clasificar_paciente_cardiovascular --> decidir_herramienta;
-	decidir_herramienta -.-> analizar;
-	decidir_herramienta -.-> calcular_map;
-	decidir_herramienta -.-> clasificar_paciente_cardiovascular;
-	decidir_herramienta -.-> search_rag;
-	juez -. &nbsp;volver_investigador&nbsp; .-> decidir_herramienta;
+	calcular_map --> gestor_clinico;
+	clasificar_paciente_cardiovascular --> gestor_clinico;
+	extractor_LLM --> gestor_clinico;
+	gestor_clinico -.-> analizar;
+	gestor_clinico -.-> calcular_map;
+	gestor_clinico -.-> clasificar_paciente_cardiovascular;
+	gestor_clinico -.-> search_rag;
+	juez -. &nbsp;volver_investigador&nbsp; .-> gestor_clinico;
 	juez -.-> respuesta_final;
-	preprocesar --> decidir_herramienta;
-	search_rag --> decidir_herramienta;
+	resumir_evidencia_rag --> gestor_clinico;
+	search_rag -.-> gestor_clinico;
+	search_rag -.-> resumir_evidencia_rag;
 	respuesta_final --> __end__;
 	classDef default fill:#f2f0ff,line-height:1.2
 	classDef first fill-opacity:0

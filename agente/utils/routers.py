@@ -1,6 +1,34 @@
 from typing import Literal
 from utils.state import EstadoClinico
 
+UMBRAL_CARACTERES_EVIDENCIA_RAG = 4000
+MAX_ITEMS_EVIDENCIA_RAG_SIN_RESUMEN = 2
+MAX_RESUMENES_RAG = 2
+
+def router_memoria_rag(
+    state: EstadoClinico,
+) -> Literal["resumir_evidencia_rag", "gestor_clinico"]:
+    """
+    Router de memoria para evitar que evidencia_rag crezca demasiado.
+
+    Se ejecuta después de search_rag.
+    Si la evidencia recuperada es demasiado grande, deriva al nodo resumidor.
+    Si no, vuelve al investigador.
+    """
+
+    evidencia = state.get("evidencia_rag", [])
+    total_caracteres = sum(len(str(item)) for item in evidencia)
+
+    muchas_evidencias = len(evidencia) > MAX_ITEMS_EVIDENCIA_RAG_SIN_RESUMEN
+    evidencia_muy_larga = total_caracteres > UMBRAL_CARACTERES_EVIDENCIA_RAG
+    resumenes_disponibles = state.get("conteo_resumenes_rag", 0) < MAX_RESUMENES_RAG #Criterio de parada de acuerdo al tope actual de iteraciones del prototipo sin usar llamadas reales de APIs
+
+    if resumenes_disponibles and (muchas_evidencias or evidencia_muy_larga):
+        print("[Router Memoria RAG] Evidencia RAG grande. Se deriva al nodo resumidor.")
+        return "resumir_evidencia_rag"
+
+    print("[Router Memoria RAG] Evidencia RAG dentro del límite. Se vuelve al investigador.")
+    return "gestor_clinico"
 
 def router_herramientas(
     state: EstadoClinico,

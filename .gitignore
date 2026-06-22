@@ -1,2 +1,13 @@
-/.env.example
-/.venv
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Entorno virtual
+.venv/
+venv/
+.env
+
+# Chroma / base vectorial local
+agente/utils/tools/chroma_db/

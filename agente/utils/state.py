@@ -14,7 +14,12 @@ class EstadoClinico(TypedDict):
 
     # RAG
     query_rag: str
-    evidencia_rag: Annotated[List[str], operator.add]
+    evidencia_rag: List[str] #Correccion de error de memoria usando Patrones de resumen dinamico
+    # Memoria controlada del RAG
+    resumen_evidencia_rag: str
+    evidencia_rag_resumida: bool
+    caracteres_evidencia_rag: int
+    conteo_resumenes_rag: int
 
     # Decisión del investigador
     herramienta_siguiente: str
